@@ -2,7 +2,7 @@ package io.zoooohs.realworld.domain.article.model;
 
 import lombok.*;
 
-import javax.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.AssertTrue;
 
 @Getter
 @Setter
