@@ -19,22 +19,23 @@
 
 ## 기술 스택
 
-- **Framework**: Spring Boot 2.6.7
-- **Language**: Java 11
+- **Framework**: Spring Boot 3.2.0
+- **Language**: Java 21
 - **ORM**: Spring Data JPA
-- **Security**: Spring Security + JWT
+- **Security**: Spring Security 6 + JWT
 - **Database**:
   - H2 (로컬 개발 및 테스트)
   - MariaDB (프로덕션)
-- **Build Tool**: Gradle
-- **Other**: Lombok, Validation
+- **Build Tool**: Gradle 8.5
+- **CI/CD**: GitHub Actions
+- **Other**: Lombok, Validation, JaCoCo
 
 ## 빠른 시작
 
 ### 사전 요구사항
 
-- JDK 11 이상
-- Gradle (또는 ./gradlew 사용)
+- JDK 21 이상
+- Gradle 8.5+ (또는 ./gradlew 사용)
 
 ### 애플리케이션 실행
 
@@ -199,6 +200,63 @@ JWT 설정은 `src/main/resources/application.yaml`에서 관리됩니다.
 - [ ] CORS 설정 추가 (`WebSecurityConfiguration.java:26`)
 - [ ] UserController 리팩토링 (username 파라미터 사용)
 - [ ] 서비스 구조 개선 (1 Service - 1 Repository 원칙)
+
+## CI/CD & 품질 관리
+
+### GitHub Actions CI
+
+모든 Pull Request와 master 브랜치 push에 대해 자동으로 다음을 실행합니다:
+
+- ✅ 테스트 자동 실행
+- ✅ 커버리지 측정 및 리포트 생성
+- ✅ 커버리지 70% 이상 검증
+- ✅ PR에 자동으로 커버리지 코멘트 추가
+
+워크플로우 파일: `.github/workflows/ci.yml`
+
+### Git Hooks (Pre-commit)
+
+로컬에서 커밋하기 전에 자동으로 품질 검사를 수행합니다:
+
+**자동 설치**:
+```bash
+# 빌드 시 자동으로 설치됨
+./gradlew build
+
+# 또는 수동 설치
+./gradlew installGitHooks
+```
+
+**검증 항목**:
+- ✅ 테스트 실행 및 통과 확인
+- ✅ 커버리지 80% 이상 검증 (로컬 기준)
+
+**스킵 방법**:
+```bash
+# 일회성 스킵
+git commit --no-verify -m "메시지"
+
+# 환경변수로 스킵
+GIT_SKIP_HOOKS=1 git commit -m "메시지"
+```
+
+### 2단계 검증 시스템
+
+```
+로컬 개발 (Pre-commit Hook)
+├─ 테스트 실행
+├─ 커버리지 80% 검증 (엄격한 기준)
+└─ 커밋 허용/차단
+     ↓
+GitHub Actions (CI)
+├─ 테스트 재실행
+├─ 커버리지 70% 검증 (최소 기준)
+└─ PR 머지 허용/차단
+```
+
+**로컬과 CI의 차이**:
+- **로컬 (80%)**: 높은 품질 기준 유지
+- **CI (70%)**: 최소 품질 보장
 
 ## 문서
 

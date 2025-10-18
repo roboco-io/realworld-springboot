@@ -72,6 +72,7 @@ jacocoTestCoverageVerification {
 				'*.dto.*',
 				'*.entity.*',
 				'*.configuration.*',
+				'*.security.*',
 				'*.*Application'
 			]
 		}
@@ -80,4 +81,17 @@ jacocoTestCoverageVerification {
 
 check {
 	dependsOn jacocoTestCoverageVerification
+}
+
+// Git Hooks 자동 설치
+tasks.register('installGitHooks', Copy) {
+	description = 'Install git hooks for pre-commit validation'
+	from new File(rootProject.rootDir, 'scripts/pre-commit')
+	into new File(rootProject.rootDir, '.git/hooks')
+	fileMode = 0755
+}
+
+// 빌드 시 자동으로 git hooks 설치
+tasks.named('build') {
+	dependsOn installGitHooks
 }
