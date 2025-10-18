@@ -1,0 +1,84 @@
+#!/bin/bash
+
+echo "🔍 Pre-commit 검증 시작..."
+
+# 색상 정의
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# --no-verify 플래그로 스킵 가능
+if [ -n "$GIT_SKIP_HOOKS" ]; then
+    echo -e "${YELLOW}⚠️  Pre-commit 검증 건너뜀 (GIT_SKIP_HOOKS 설정됨)${NC}"
+    exit 0
+fi
+
+# 1단계: 테스트 실행
+echo "📊 테스트 실행 중..."
+./gradlew test jacocoTestReport --console=plain --quiet
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ 테스트 실패. 커밋이 중단되었습니다.${NC}"
+    echo ""
+    echo "수정 후 다시 시도하거나, 다음 방법으로 건너뛸 수 있습니다:"
+    echo "  1. git commit --no-verify (일회성)"
+    echo "  2. GIT_SKIP_HOOKS=1 git commit (환경변수)"
+    echo ""
+    echo "테스트 리포트: build/reports/tests/test/index.html"
+    exit 1
+fi
+
+# 2단계: 커버리지 80% 검증
+echo "📈 커버리지 검증 중 (최소 80%)..."
+
+# JaCoCo XML 리포트에서 커버리지 추출
+if [ -f "build/reports/jacoco/test/jacocoTestReport.xml" ]; then
+    # XML에서 instruction 커버리지 계산 (macOS 호환)
+    COVERED=$(grep 'type="INSTRUCTION"' build/reports/jacoco/test/jacocoTestReport.xml | head -1 | sed -n 's/.*covered="\([0-9]*\)".*/\1/p')
+    MISSED=$(grep 'type="INSTRUCTION"' build/reports/jacoco/test/jacocoTestReport.xml | head -1 | sed -n 's/.*missed="\([0-9]*\)".*/\1/p')
+
+    if [ -n "$COVERED" ] && [ -n "$MISSED" ]; then
+        TOTAL=$((COVERED + MISSED))
+        COVERAGE=$((COVERED * 100 / TOTAL))
+
+        echo "현재 커버리지: ${COVERAGE}%"
+
+        if [ $COVERAGE -lt 80 ]; then
+            echo -e "${YELLOW}⚠️  커버리지 ${COVERAGE}%는 80% 미만입니다.${NC}"
+            echo ""
+            echo "로컬 pre-commit은 80% 기준을 권장하지만,"
+            echo "GitHub Actions CI는 70% 기준으로 검증됩니다."
+            echo ""
+            echo "계속 진행하려면:"
+            echo "  git commit --no-verify"
+            echo ""
+            echo "커버리지 리포트: build/reports/jacoco/test/html/index.html"
+            exit 1
+        fi
+
+        echo -e "${GREEN}✅ 커버리지 ${COVERAGE}% (80% 이상)${NC}"
+    else
+        echo -e "${YELLOW}⚠️  커버리지 수치를 추출할 수 없습니다.${NC}"
+        echo "기본 70% 검증으로 진행합니다."
+
+        ./gradlew jacocoTestCoverageVerification --console=plain --quiet
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ 커버리지 70% 미달. 커밋이 중단되었습니다.${NC}"
+            exit 1
+        fi
+    fi
+else
+    echo -e "${YELLOW}⚠️  커버리지 리포트를 찾을 수 없습니다.${NC}"
+    echo "기본 70% 검증으로 진행합니다."
+
+    ./gradlew jacocoTestCoverageVerification --console=plain --quiet
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ 커버리지 70% 미달. 커밋이 중단되었습니다.${NC}"
+        exit 1
+    fi
+fi
+
+echo ""
+echo -e "${GREEN}✅ 모든 pre-commit 검증 통과!${NC}"
+exit 0
