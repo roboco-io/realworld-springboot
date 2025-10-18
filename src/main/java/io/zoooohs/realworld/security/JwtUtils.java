@@ -5,14 +5,14 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.time.Instant;
 import java.util.Date;
 
 public class JwtUtils {
     private final Long validSeconds;
-    private final Key key;
+    private final SecretKey key;
 
     public JwtUtils(String signKey, Long validSeconds) {
         this.validSeconds = validSeconds;
@@ -29,7 +29,7 @@ public class JwtUtils {
 
     public boolean validateToken(String jwt) {
         try {
-            Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(jwt).getBody();
+            Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(jwt).getPayload();
             Instant now = Instant.now();
             Date exp = claims.getExpiration();
             return exp.after(Date.from(now));
@@ -40,7 +40,7 @@ public class JwtUtils {
 
     public String getSub(String jwt) {
         try {
-            Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(jwt).getBody();
+            Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(jwt).getPayload();
             return claims.getSubject();
         } catch (JwtException e) {
             return null;
