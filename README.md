@@ -60,6 +60,23 @@ API Base URL: `http://localhost:8080/api`
 ./gradlew build -x test
 ```
 
+### 테스트 커버리지
+
+```bash
+# 테스트 실행 및 커버리지 리포트 생성
+./gradlew test jacocoTestReport
+
+# 커버리지 검증 (최소 70% 기준)
+./gradlew jacocoTestCoverageVerification
+
+# 커버리지 리포트 확인
+open build/reports/jacoco/test/html/index.html
+```
+
+커버리지 리포트는 다음 위치에서 확인할 수 있습니다:
+- **HTML**: `build/reports/jacoco/test/html/index.html`
+- **XML**: `build/reports/jacoco/test/jacocoTestReport.xml`
+
 ### 빌드
 
 ```bash
@@ -168,6 +185,14 @@ JWT 설정은 `src/main/resources/application.yaml`에서 관리됩니다.
 - **단위 테스트**: Service 레이어 중심 (`@ExtendWith(MockitoExtension.class)`)
 - **통합 테스트**: Controller 레이어 (`@WebMvcTest`, `@WithAuthUser`)
 - **리포지토리 테스트**: `@DataJpaTest`
+
+### 테스트 커버리지 정책
+
+- **JaCoCo**를 사용한 자동 커버리지 측정
+- **최소 커버리지 목표**: 70% (전체), 60% (클래스별)
+- **제외 대상**: DTO, Entity, Configuration, Application 클래스
+- 테스트 실행 시 자동으로 커버리지 리포트 생성
+- `./gradlew check` 실행 시 커버리지 검증 자동 수행
 
 ### 알려진 개선 과제
 
